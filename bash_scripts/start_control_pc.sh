@@ -25,10 +25,10 @@ where:
     ./start_control_pc.sh -i iam-space -u iam-lab -p 12345678 -d ~/Documents/franka-interface -r 1 -s 0
     "
 
-control_pc_uname="iam-lab"
-control_pc_use_password=0
-control_pc_password=""
-control_pc_franka_interface_path="Documents/franka-interface"
+control_pc_uname="***"
+control_pc_use_password=1
+control_pc_password="***"
+control_pc_franka_interface_path="/mnt/shared/franka-interface"
 start_franka_interface=1
 robot_number=1
 robot_ip="172.16.0.2"
@@ -77,7 +77,7 @@ while getopts ':h:i:u:p:d:r:a:s:g:o:l:e' option; do
 done
 shift $((OPTIND - 1))
 
-workstation_ip_address="`hostname`"
+workstation_ip_address="192.168.1.243"
 
 # Notify the IP addresses being used.
 echo "Control PC IP uname/address: "$control_pc_uname"@"$control_pc_ip_address
@@ -110,7 +110,7 @@ if [ "$start_franka_interface" -eq 1 ]; then
 # ssh to the control pc and start franka_interface in a new gnome-terminal
 start_franka_interface_on_control_pc_path="$DIR/start_franka_interface_on_control_pc.sh"
 echo "Will ssh to control PC and start franka-interface."
-gnome-terminal --working-directory="$DIR" -- bash $start_franka_interface_on_control_pc_path $robot_ip $old_gripper $log_on_franka_interface $stop_on_error $control_pc_uname $control_pc_ip_address $control_pc_franka_interface_path $control_pc_use_password $control_pc_password 
+gnome-terminal --working-directory="$DIR" -- bash $start_franka_interface_on_control_pc_path $robot_ip $old_gripper $log_on_franka_interface $stop_on_error $control_pc_uname $control_pc_ip_address $control_pc_franka_interface_path $control_pc_use_password $control_pc_password $workstation_ip_address
 echo "Done"
 sleep 3
 else
@@ -120,16 +120,22 @@ fi
 # ssh to the control pc and start ROS action server in a new gnome-terminal
 start_franka_ros_interface_on_control_pc_path="$DIR/start_franka_ros_interface_on_control_pc.sh"
 echo "Will ssh to control PC and start ROS action server."
-gnome-terminal --working-directory="$DIR" -- bash $start_franka_ros_interface_on_control_pc_path $control_pc_uname $control_pc_ip_address $workstation_ip_address $control_pc_franka_interface_path $robot_number $control_pc_use_password $control_pc_password
+gnome-terminal --working-directory="$DIR" -- bash $start_franka_ros_interface_on_control_pc_path $control_pc_uname $control_pc_ip_address $workstation_ip_address $control_pc_franka_interface_path $robot_number $control_pc_use_password $control_pc_password $workstation_ip_address
 sleep 3
 
 if [ "$with_gripper" -eq 1 ] && [ "$old_gripper" -eq 0 ]; then
 start_franka_gripper_on_control_pc_path="$DIR/start_franka_gripper_on_control_pc.sh"
 echo "Will ssh to control PC and start ROS action server."
-gnome-terminal --working-directory="$DIR" -- bash $start_franka_gripper_on_control_pc_path $control_pc_uname $control_pc_ip_address $workstation_ip_address $control_pc_franka_interface_path $robot_number $robot_ip $control_pc_use_password $control_pc_password
+gnome-terminal --working-directory="$DIR" -- bash $start_franka_gripper_on_control_pc_path $control_pc_uname $control_pc_ip_address $workstation_ip_address $control_pc_franka_interface_path $robot_number $robot_ip $control_pc_use_password $control_pc_password $workstation_ip_address
 sleep 3
 else
     echo "Will not start franka gripper on the control pc."
 fi
+
+# ssh to the control pc and start realsense camera in a new gnome-terminal
+start_realsense_camera_on_control_pc_path="$DIR/start_realsense_camera_on_control_pc.sh"
+echo "Will ssh to control PC and start ROS action server."
+gnome-terminal --working-directory="$DIR" -- bash $start_realsense_camera_on_control_pc_path $control_pc_uname $control_pc_ip_address $workstation_ip_address $control_pc_use_password $control_pc_password $workstation_ip_address
+sleep 3
 
 echo "Done"
