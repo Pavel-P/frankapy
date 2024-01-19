@@ -22,12 +22,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     fa = FrankaArm()
-    fa.reset_joints()
 
-    rospy.loginfo('Loading Trajectory')
+    rospy.loginfo('Loading trajectory data')
 
     with open(args.trajectory_pickle, 'rb') as pkl_f:
-        skill_data = pickle.load(pkl_f)
+        skill_data = pkl.load(pkl_f)
     
     assert skill_data[0]['skill_description'] == 'PlanarGuideMode', \
         "Trajectory not collected in planar guide mode"
@@ -48,6 +47,17 @@ if __name__ == "__main__":
     position_kps_cart = tz + rz
     force_kps_cart = [0.1] * 6
 
+    rospy.loginfo('Moving to standby')
+    standby_joints = np.array([ 0.04426385,  0.05210685, -0.03669728, -2.47104876,
+                                0.00424517,  2.524196  ,  0.77732302])
+    fa.goto_joints(standby_joints)
+    
+    rospy.loginfo('Moving to surface')
+    surface_joints = np.array([ 0.03829632,  0.33102359, -0.02919324, -2.46936744,
+                                0.00428743,  2.78393814,  0.78432293])
+    fa.goto_joints(surface_joints, force_thresholds=[1e6,1e6,force,1e6,1e6,1e6])
+
+
     rospy.loginfo('Initializing Sensor Publisher')
     pub = rospy.Publisher(FC.DEFAULT_SENSOR_PUBLISHER_TOPIC, SensorDataGroup, queue_size=10)
     rate = rospy.Rate(hz)
@@ -64,7 +74,7 @@ if __name__ == "__main__":
         timestamp = rospy.Time.now().to_time() - init_time
         traj_gen_proto_msg = ForcePositionSensorMessage(
             id=i, timestamp=timestamp, seg_run_time=1./hz,
-            pose=transform_to_list(pose_traj[i]),
+            pose=pose_traj[i],
             force=target_force
         )
         fb_ctrlr_proto = ForcePositionControllerSensorMessage(
@@ -83,5 +93,11 @@ if __name__ == "__main__":
         rate.sleep()
 
     fa.stop_skill()
+
+    rospy.sleep(3.)
+    rospy.loginfo('Returning to standby')
+    standby_joints = np.array([ 0.04426385,  0.05210685, -0.03669728, -2.47104876,
+                                0.00424517,  2.524196  ,  0.77732302])
+    fa.goto_joints(standby_joints)
 
     rospy.loginfo('Done')
